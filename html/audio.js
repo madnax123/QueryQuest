@@ -83,30 +83,6 @@ if (musicaMenu) {
         // Ripristina la posizione precedente della traccia
     const posizioneSalvata = sessionStorage.getItem(CHIAVE_POSIZIONE);
 
-    // Partenza rallentata: da DA (0.7 = 70%) a velocità normale in DURATA ms
-    let rampaFatta = false;
-
-    function rampaIniziale() {
-        if (rampaFatta) return;
-        rampaFatta = true;
-
-        const DA = 0.7;
-        const DURATA = 4000;
-
-        musicaMenu.preservesPitch = false;   // true = rallenta senza abbassare il tono
-        musicaMenu.playbackRate = DA;
-
-        const inizio = performance.now();
-
-        function passo(ora) {
-            const p = Math.min((ora - inizio) / DURATA, 1);
-            musicaMenu.playbackRate = DA + (1 - DA) * p;
-            if (p < 1) requestAnimationFrame(passo);
-        }
-
-        requestAnimationFrame(passo);
-    }
-
     // Ripiego autoplay: se il browser rifiuta il play() automatico
     // si riprova al primo click o al primo tasto finché non riesce.
     function avviaMusica() {
@@ -116,9 +92,6 @@ if (musicaMenu) {
             // Riuscito → i listener di ripiego si autorimuovono
             document.removeEventListener("pointerdown", avviaMusica);
             document.removeEventListener("keydown", avviaMusica);
-
-            // Rallenta solo alla prima partenza, non quando riprende da una pagina all'altra
-            if (posizioneSalvata === null) rampaIniziale();
 
         }).catch(function(errore) {
 
