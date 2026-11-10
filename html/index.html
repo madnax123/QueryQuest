@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <title>QueryQuest</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        #background img {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            object-fit: cover;
+            object-position: center;
+            z-index: -1;
+            pointer-events: none;
+
+
+        }
+
+        h1 {
+            color: #EAF2FF;
+            /* Il titolo usa il font di sistema di prima (serif),
+               non eredita Orbitron dal body */
+            font-family: 'Times New Roman', serif;
+            display: flex;
+            justify-content: center;
+            margin-top: 200px;
+            font-size: clamp(3rem, 8vw, 7rem);
+            text-shadow:
+                0 0 5px #00E5FF,
+                0 0 15px #00E5FF,
+                0 0 30px rgba(0, 229, 255, 0.6),
+                3px 3px 0 rgba(255, 60, 172, 0.65);
+            -webkit-text-stroke: 2px #00E5FF;
+            /* -webkit-text-stroke: spessore colore;*/
+            transform: perspective(350px) rotateX(15deg);
+            transform-origin: center top;
+        }
+
+        .capitalLetter {
+            font-size: 1.35em;
+            vertical-align: baseline;
+            transform: translateY(-0.27em);
+        }
+
+        #diritti {
+            position: absolute;
+            color: #EAF2FF;
+            bottom: 10px;
+            left: 10px;
+        }
+
+        #scelte {
+            display: flex;
+            flex-direction: column;
+            margin: 10px auto 0; /* sopra 10px, sotto 0, CX-DEstra auto = "centrami" */
+            width: min(720px, 90%); 
+            gap: 50px;
+        }
+
+        .bottoneMenu {
+            background-color: #00E5FF;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 20px;
+            height: 90px;
+
+            border: 2px solid #00b0c4;
+
+            box-shadow: 2px 3px 15px rgba(0, 229, 255, 0.7);
+
+            text-decoration: none;
+
+            /* transition in BASE: fluida sia all'entrata sia all'uscita */
+            transition: transform 0.25s ease,
+                        background-color 0.25s ease,
+                        border-color 0.25s ease,
+                        box-shadow 0.25s ease;
+        }
+
+        .bottoneMenu p {
+            font-size: 3.35em;
+            color: #EAF2FF;
+            font-weight: 600;
+
+            transform: perspective(350px) rotateX(10deg);
+            /*inclinazione testo alla sw*/
+        }
+
+        #nuovaPartita:hover,
+        #impostazioni:hover {
+            transform: scale(1.1);
+            background-color: #D952AA;
+            border-color: #D952AA;
+            box-shadow: 2px 3px 15px #FF3CAC;
+        }
+
+        a {
+            text-decoration: none;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <h1><span class="capitalLetter"> Q</span>UERY<span class="capitalLetter">Q</span>UEST</h1>
+
+
+    <div id="background"> <img
+            src="https://cdna.artstation.com/p/assets/images/images/094/425/456/large/prime-digital-store-7.webp?1765382944"
+            alt="background" /></div>
+
+    <div id="scelte">
+
+        <a class="bottoneMenu" id="nuovaPartita" href="menuPedina.html">
+            <p class="scritte" data-it="NUOVA PARTITA" data-en="NEW GAME">NUOVA PARTITA</p>
+        </a>
+
+        <a class="bottoneMenu" id="impostazioni" href="impostazioni.html">
+            <p class="scritte" data-it="IMPOSTAZIONI" data-en="SETTINGS">IMPOSTAZIONI</p>
+        </a>
+    </div>
+
+
+    <audio id="musicaMenu" loop preload="auto">
+        <source src="../audio/circuit-punk-game-menu.mp3" type="audio/mpeg">
+    </audio>
+
+    <p id="diritti">@background by:Prime Digital Store</p>
+
+
+    <script src="lingue.js"></script>
+    <script src="audio.js"></script>
+</body>
+
+</html>

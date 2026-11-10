@@ -1,0 +1,1209 @@
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QueryQuest</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
+
+    <style>
+        /* ============ BASE ============ */
+
+        body {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            overflow: hidden;
+            background-color: black;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* SCENA THREE.JS */
+        #scena3D {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: auto;
+        }
+
+        #scena3D canvas {
+            display: block;
+            position: absolute;
+            inset: 0;
+        }
+
+
+        /* INTERFACCIA */
+        #hud {
+            position: fixed;
+            inset: 0;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+
+        /* CONTENITORE DADO */
+
+        #contenitoreDado {
+            position: fixed;
+            bottom: 35px;
+            right: 35px;
+            z-index: 10;
+            pointer-events: auto;
+        }
+
+        /* PULSANTE */
+
+        #lanciaDado {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+
+            padding: 18px 24px;
+
+            background: rgba(5, 12, 30, 0.9);
+            border: 2px solid #00E5FF;
+            border-radius: 12px;
+
+            color: #EAF2FF;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 2px;
+
+            cursor: pointer;
+
+            box-shadow:
+                0 0 12px rgba(0, 229, 255, 0.35),
+                inset 0 0 12px rgba(0, 229, 255, 0.1);
+
+            transition: 0.2s;
+        }
+
+        #lanciaDado:hover:not(:disabled) {
+            transform: scale(1.06);
+            box-shadow:
+                0 0 20px rgba(0, 229, 255, 0.7);
+        }
+
+        #lanciaDado:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        /* FACCIA DEL DADO */
+
+        .dado-faccia {
+            position: relative;
+
+            width: 90px;
+            height: 90px;
+
+            display: block;
+
+            background: #EAF2FF;
+            border: 3px solid #00E5FF;
+            border-radius: 14px;
+
+            box-shadow:
+                0 0 15px rgba(0, 229, 255, 0.5),
+                inset 0 0 10px rgba(0, 0, 0, 0.15);
+        }
+
+        /* PUNTINI */
+
+        .dado-faccia .punto {
+            position: absolute;
+
+            width: 13px;
+            height: 13px;
+
+            background: #080B16;
+            border-radius: 50%;
+        }
+
+        /* POSIZIONI DEI PUNTINI */
+
+        .punto[data-pos="1"] {
+            top: 12px;
+            left: 12px;
+        }
+
+        .punto[data-pos="2"] {
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .punto[data-pos="3"] {
+            top: 12px;
+            right: 12px;
+        }
+
+        .punto[data-pos="4"] {
+            top: 50%;
+            left: 12px;
+            transform: translateY(-50%);
+        }
+
+        .punto[data-pos="5"] {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .punto[data-pos="6"] {
+            top: 50%;
+            right: 12px;
+            transform: translateY(-50%);
+        }
+
+        .punto[data-pos="7"] {
+            bottom: 12px;
+            left: 12px;
+        }
+
+        .punto[data-pos="8"] {
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .punto[data-pos="9"] {
+            bottom: 12px;
+            right: 12px;
+        }
+
+        /* NASCONDE I PUNTINI NON UTILIZZATI */
+
+        .dado-faccia .punto[hidden] {
+            display: none;
+        }
+
+        /* STILE GENERALE PANNELLI */
+
+        .pannello-hud {
+            position: fixed;
+            z-index: 5;
+
+            background: rgba(5, 13, 27, 0.88);
+
+            border: 1px solid rgba(0, 229, 255, 0.55);
+
+            box-shadow:
+                0 0 10px rgba(0, 229, 255, 0.12),
+                inset 0 0 15px rgba(0, 229, 255, 0.04);
+
+            backdrop-filter: blur(8px);
+
+            padding: 15px 20px;
+
+            color: #EAF2FF;
+
+            font-family: 'Orbitron', sans-serif;
+
+            pointer-events: auto;
+
+            animation: comparsaHUD 0.6s ease;
+        }
+
+
+        /* TITOLI */
+
+        .titolo-pannello {
+            color: #00E5FF;
+
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 2px;
+
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+
+            border-bottom: 1px solid rgba(0, 229, 255, 0.3);
+        }
+
+
+        /* PUNTEGGIO */
+
+        #pannelloPunti {
+            top: 20px;
+            right: 20px;
+
+            width: 180px;
+
+            text-align: center;
+
+            border-color: rgba(255, 53, 200, 0.7);
+
+            box-shadow:
+                0 0 12px rgba(255, 53, 200, 0.15),
+                inset 0 0 15px rgba(255, 53, 200, 0.05);
+        }
+
+        #pannelloPunti .titolo-pannello {
+            color: #FF35C8;
+
+            /* il bordo-inferiore (la linea) segue la larghezza:
+                qui la limitiamo e teniamo il tutto centrato */
+            width: 70%;
+            margin: 0 auto;
+
+            border-bottom-width: 3px;
+
+            border-color: rgba(255, 53, 200, 0.3);
+        }
+
+        #valorePunti {
+            font-size: 36px;
+            font-weight: bold;
+            color: #FFFFFF;
+            padding-top: 6px;
+            text-shadow: 0 0 12px #FF35C8;
+
+            transition: transform 0.2s ease;
+        }
+
+
+        /* SPIEGAZIONE */
+
+        #pannelloSpiegazione {
+            top: 20px;
+            left: 20px;
+
+            width: 280px;
+
+            /* faccia terminale: niente riquadro, solo testo sospeso */
+
+            background: none;
+            border: none;
+            box-shadow: none;
+            backdrop-filter: none;
+        }
+
+        #pannelloSpiegazione .titolo-pannello {
+            margin-bottom: 0;
+        }
+
+        #titoloSpiegazione {
+            margin: 5px 0 0;
+
+            color: #FFFFFF;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 14px;
+            letter-spacing: 1px;
+
+            min-height: 18px;
+        }
+
+        #testoSpiegazione {
+            margin: 6px 0 0;
+
+            color: #A8B8CC;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+
+            /* collassata di default: circa 3 righe; il resto
+                si apre al click (max-height anima, none no) */
+            max-height: 5em;
+            overflow: hidden;
+
+            cursor: pointer;
+            transition: max-height 0.35s ease;
+        }
+
+        #pannelloSpiegazione.aperta #testoSpiegazione {
+            max-height: 60vh;
+        }
+
+        /* il trattino da terminale resta sempre acceso, dopo
+            l'ultimo carattere battuto o da sola se vuoto */
+
+        #testoSpiegazione::after {
+            content: '▮';
+            color: #00E5FF;
+            margin-left: 3px;
+            animation: lampeggiaCursore 1s steps(1) infinite;
+        }
+
+        /* la freccia apri/chiudi sta nel titolo, solo se il
+            testo effettivamente sborda dal pannello chiuso */
+
+        #pannelloSpiegazione.espandibile #titoloSpiegazione::after {
+            content: ' ▼';
+            color: #00E5FF;
+            font-size: 10px;
+        }
+
+        #pannelloSpiegazione.aperta #titoloSpiegazione::after {
+            content: ' ▲';
+            color: #00E5FF;
+            font-size: 10px;
+        }
+
+        /* stato "home": messaggio di benvenuto, niente trattino */
+
+        #pannelloSpiegazione.home #testoSpiegazione::after {
+            content: none;
+        }
+
+
+        /* CRONOLOGIA */
+
+        #pannelloCronologia {
+            bottom: 20px;
+            left: 20px;
+
+            width: 300px;
+            max-height: 220px;
+
+            overflow: hidden;
+
+            /* niente riquadro: solo testo sospeso sulla scena,
+                la linea sotto il titolo fa da separatore */
+
+            background: none;
+            border: none;
+            box-shadow: none;
+            backdrop-filter: none;
+        }
+
+        /* il titolo locale non aggiunge margine: la spaziatura
+            equa la fa il padding del messaggio vuoto */
+
+        #pannelloCronologia .titolo-pannello {
+            margin-bottom: 0;
+        }
+
+        #listaCronologia {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+
+            max-height: 145px;
+            overflow-y: auto;
+        }
+
+        /* stile terminale: niente box, solo testo monospaziato.
+            Il messaggio d'ingresso va da solo, senza trattino */
+
+        .cronologia-vuota {
+            color: #647A91;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 11px;
+            letter-spacing: 1px;
+            padding: 15px 0 12px;
+        }
+
+        /* dal primo esercizio in poi, il cursore resta acceso
+            in coda alla voce piu' recente (la prima in lista) */
+
+        .voce-cronologia:first-child::after {
+            content: '▮';
+            color: #00E5FF;
+            font-size: 11px;
+            margin-left: 3px;
+            animation: lampeggiaCursore 1s steps(1) infinite;
+        }
+
+        @keyframes lampeggiaCursore {
+            50% {
+                opacity: 0;
+            }
+        }
+
+        .voce-cronologia {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+
+            gap: 10px;
+
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 12px;
+            letter-spacing: 1px;
+
+            color: #BFD4E6;
+
+            padding: 2px 0;
+        }
+
+        /* il prompt ">" che apre la riga, colore categoria a parte */
+
+        .voce-cronologia>span:first-child {
+            color: #8FA8C0;
+        }
+
+        .voce-cronologia>span:first-child::before {
+            content: '> ';
+            color: rgba(0, 229, 255, 0.6);
+        }
+
+        .voce-cronologia>span:last-child {
+            font-weight: bold;
+            color: #647A91;
+        }
+
+        .voce-cronologia.corretto>span:last-child {
+            color: #00FF9C;
+        }
+
+        .voce-cronologia.errato>span:last-child {
+            color: #FF3864;
+        }
+
+
+        /* ANIMAZIONE */
+
+        @keyframes comparsaHUD {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* variante centrata: il quiz si posiziona via transform, quindi
+           la comparsa deve animare TUTTO il translate, nient'altro */
+
+        @keyframes comparsaHUDCentrata {
+            from {
+                opacity: 0;
+                transform: translate(-50%, calc(-50% - 8px));
+            }
+
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
+
+        /* PANNELLO QUIZ (/desktop pele come pannelli HUD) */
+
+        #pannelloQuiz {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+
+            z-index: 20;
+
+            /* la larghezza segue il contenuto (niente distese di
+                vuoto intorno a opzioni corte), con tetto massimo */
+
+            width: fit-content;
+            max-width: min(720px, 94%);
+            max-height: 85vh;
+            overflow-y: auto;
+
+            padding: 24px 28px;
+
+            animation: comparsaHUDCentrata 0.6s ease;
+        }
+
+        /* l'attributo hidden vince sull'override del display */
+        #pannelloQuiz[hidden] {
+            display: none;
+        }
+
+        /* il titolo del quiz: grande e centrato, sempre Orbitron */
+
+        #pannelloQuiz .titolo-pannello {
+            text-align: center;
+            margin-bottom: 6px;
+        }
+
+        /* ora e' un h2: ripuliamo da margini e scala del browser */
+
+        #quizCategoriaLabel {
+            margin: 0;
+
+            color: #00E5FF;
+
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 3px;
+        }
+
+        #quizDomanda {
+            color: #EAF2FF;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 17px;
+            line-height: 1.6;
+            text-align: center;
+
+            max-width: 560px;
+            margin: 0 auto 14px;
+        }
+
+        #quizCodice {
+            background: #050914;
+            border-left: 2px solid #00E5FF;
+            color: #9FE8F5;
+
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+
+            padding: 10px 12px;
+            margin: 0 0 12px;
+
+            white-space: pre;
+            overflow-x: auto;
+
+            /* tetto al codice lungo: l'eventuale eccedenza scorre
+               DENTRO il blocco, cosi' CONFERMA resta sempre a vista */
+            max-height: 40vh;
+            overflow-y: auto;
+        }
+
+        #quizAreaRisposta {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        /* opzioni multiple: il gruppo si misura con la risposta
+            piu' lunga, tutte le opzioni sono larghe uguali, e se
+            tutte corte il gruppetto resta centrato e stretto */
+
+        #quizAreaRisposta.scelte {
+            width: fit-content;
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        /* opzioni con snippet: due colonne, pannello a larghezza
+            fissa — tutte le risposte a vista, senza scroll */
+
+        #pannelloQuiz.snip {
+            width: min(720px, 94%);
+        }
+
+        #quizAreaRisposta.scelte.snip {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+
+            width: 100%;
+            margin: 0;
+        }
+
+        #quizAreaRisposta.scelte.snip .quiz-opzione {
+            width: auto;
+        }
+
+        /* domande con blocco codice principale: pannello piu' largo,
+           la domanda spezza meno righe e i comandi non scivolano
+           sotto il tetto max-height */
+        #pannelloQuiz.codice {
+            width: min(880px, 94%);
+            max-width: min(880px, 94%);
+        }
+
+        /* numero dispari di opzioni: l'ultima occupa tutta la riga */
+
+        #quizAreaRisposta.scelte.snip .quiz-opzione:last-child:nth-child(odd) {
+            grid-column: span 2;
+        }
+
+        /* opzioni cortissime (numeri e simili): griglia compatta
+            centrata — le quattro cifre stanno in due righe strette,
+            niente colonna Unica alta per mezzo pannello */
+
+        #quizAreaRisposta.scelte.breve {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(110px, auto));
+            gap: 10px;
+
+            width: fit-content;
+            margin: 0 auto;
+        }
+
+        #quizAreaRisposta.scelte.breve .quiz-opzione {
+            width: auto;
+        }
+
+        .quiz-opzione {
+            display: block;
+            width: 100%;
+
+            text-align: center;
+
+            padding: 10px 14px;
+
+            background: rgba(0, 229, 255, 0.05);
+            border: 1px solid rgba(0, 229, 255, 0.35);
+            border-radius: 6px;
+
+            color: #EAF2FF;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .quiz-opzione:hover:not(:disabled) {
+            background: rgba(0, 229, 255, 0.18);
+            border-color: #00E5FF;
+        }
+
+        .quiz-opzione:disabled {
+            cursor: default;
+            opacity: 0.55;
+        }
+
+        .quiz-opzione.corretta {
+            opacity: 1;
+            border-color: #00FF9C;
+            background: rgba(0, 255, 156, 0.12);
+            color: #00FF9C;
+        }
+
+        .quiz-opzione.errata {
+            opacity: 1;
+            border-color: #FF3864;
+            background: rgba(255, 56, 100, 0.12);
+            color: #FF3864;
+        }
+
+        /* snippet dentro le opzioni a scelta multipla */
+        .quiz-codice-opzione {
+            background: #050914;
+            border-left: 2px solid rgba(0, 229, 255, 0.4);
+            color: #9FE8F5;
+
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 13px;
+
+            padding: 8px;
+            margin: 6px 0 0;
+
+            white-space: pre;
+            overflow-x: auto;
+
+            /* il codice dentro l'opzione resta incolonnato,
+                anche se l'etichetta sopra e' centrata */
+            text-align: left;
+        }
+
+        .quiz-inserimento {
+            display: flex;
+            gap: 8px;
+
+            /* il campo di risposta resta largo, non si centra
+                come le opzioni: a scrivere serve spazio */
+            width: 100%;
+        }
+
+        #quizRispostaUtente {
+            flex: 1;
+
+            padding: 10px;
+
+            background: #050914;
+            border: 1px solid #00E5FF;
+            border-radius: 6px;
+
+            color: #EAF2FF;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 15px;
+
+            outline: none;
+        }
+
+        #quizRispostaUtente:focus {
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
+        }
+
+        #quizInvia {
+            padding: 10px 16px;
+
+            background: rgba(0, 229, 255, 0.12);
+            border: 1px solid #00E5FF;
+            border-radius: 6px;
+
+            color: #00E5FF;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        #quizInvia:hover:not(:disabled) {
+            background: #00E5FF;
+            color: #080B16;
+        }
+
+        #quizInvia:disabled {
+            opacity: 0.55;
+            cursor: default;
+        }
+
+        #quizFeedback {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(0, 229, 255, 0.25);
+        }
+
+        #quizEsito {
+            margin: 0 0 6px;
+
+            font-weight: bold;
+            letter-spacing: 2px;
+            font-size: 13px;
+        }
+
+        #quizEsito.corretta {
+            color: #00FF9C;
+        }
+
+        #quizEsito.errata {
+            color: #FF3864;
+        }
+
+        /* manca proprio una risposta: avviso neutro, ambra —
+   non il rosso dell'errore, che qui non c'e' stato */
+
+        #quizEsito.avviso {
+            color: #FFC24B;
+        }
+
+        #quizSpiegazione {
+            margin: 0;
+
+            color: #A8B8CC;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        #quizContinua {
+            width: 100%;
+            margin-top: 14px;
+            padding: 12px;
+
+            background: rgba(0, 229, 255, 0.12);
+            border: 1px solid #00E5FF;
+            border-radius: 6px;
+
+            color: #00E5FF;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+            letter-spacing: 2px;
+
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        #quizContinua:hover {
+            background: #00E5FF;
+            color: #080B16;
+        }
+
+        #nomeGiocatore {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+
+            z-index: 5;
+
+            color: #EAF2FF;
+
+            font-family: 'Orbitron', sans-serif;
+            font-size: 40px;
+            font-weight: bold;
+            letter-spacing: 3px;
+
+            text-shadow:
+                0 0 6px #EAF2FF,
+                0 0 18px #00E5FF;
+
+            pointer-events: none;
+        }
+
+        /* PULSANTE IMPOSTAZIONI */
+
+        .pulsante-impostazioni {
+            position: fixed;
+            top: 20px;
+            right: 260px;
+
+            z-index: 10;
+
+            width: 48px;
+            height: 48px;
+
+            background: rgba(5, 13, 27, 0.9);
+
+            border: 1px solid #00E5FF;
+            color: #00E5FF;
+
+            font-size: 30px;
+
+            cursor: pointer;
+
+            box-shadow: 0 0 12px rgba(0, 229, 255, 0.3);
+
+            transition: 0.25s;
+        }
+
+        .pulsante-impostazioni:hover {
+            background: rgba(0, 229, 255, 0.15);
+            box-shadow: 0 0 20px #00E5FF;
+            transform: rotate(45deg);
+        }
+
+
+        /* FINESTRA IMPOSTAZIONI */
+
+        #menuImpostazioni {
+            display: none;
+
+            position: fixed;
+            z-index: 20;
+
+            top: 50%;
+            left: 50%;
+
+            transform: translate(-50%, -50%);
+
+            width: 340px;
+
+            padding: 22px;
+
+            background: rgba(5, 13, 27, 0.97);
+
+            border: 1px solid #00E5FF;
+
+            box-shadow:
+                0 0 20px rgba(0, 229, 255, 0.3),
+                inset 0 0 20px rgba(0, 229, 255, 0.05);
+
+            color: #EAF2FF;
+
+            font-family: 'Orbitron', sans-serif;
+        }
+
+
+        /* TITOLO */
+
+        #menuImpostazioni .titolo-pannello {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            font-size: 15px;
+        }
+
+        #chiudiImpostazioni {
+            background: none;
+            border: none;
+            color: #FF3864;
+            font-size: 22px;
+            cursor: pointer;
+        }
+
+
+        /* GRUPPI */
+
+        .gruppo-impostazioni {
+            margin: 20px 0;
+        }
+
+        .gruppo-impostazioni h3 {
+            font-size: 11px;
+            color: #00E5FF;
+            letter-spacing: 2px;
+        }
+
+        .gruppo-impostazioni label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            margin: 10px 0;
+
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+
+
+        /* CHECKBOX E RADIO */
+
+        .gruppo-impostazioni input {
+            accent-color: #00E5FF;
+            cursor: pointer;
+        }
+
+        #volume {
+            width: 100%;
+            margin: 6px 0 0;
+        }
+
+        /* SALVA */
+
+        #salvaImpostazioni,
+        #quitGame {
+            width: 100%;
+            padding: 12px;
+
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+            letter-spacing: 2px;
+
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        #salvaImpostazioni {
+            background: rgba(0, 229, 255, 0.12);
+            border: 1px solid #00E5FF;
+            color: #00E5FF;
+        }
+
+        #salvaImpostazioni:hover {
+            background: #00E5FF;
+            color: #080B16;
+        }
+
+        .separatore-impostazioni {
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            margin: 20px 0;
+        }
+
+
+        /* QUIT GAME */
+
+        #quitGame {
+            background: rgba(255, 56, 100, 0.08);
+            border: 1px solid #FF3864;
+            color: #FF3864;
+        }
+
+        #quitGame:hover {
+            background: #FF3864;
+            color: white;
+        }
+    </style>
+
+</head>
+
+<body data-musica="../audio/Rammstein.mp3">
+
+    <!-- PUNTEGGIO IN ALTO A DESTRA -->
+    <div id="pannelloPunti" class="pannello-hud">
+
+        <div class="titolo-pannello" data-it="PUNTEGGIO" data-en="SCORE">
+            PUNTEGGIO
+        </div>
+
+        <div id="valorePunti">000</div>
+
+    </div>
+
+
+    <!-- SPIEGAZIONE IN ALTO A SINISTRA -->
+    <div id="pannelloSpiegazione" class="pannello-hud home">
+
+        <div class="titolo-pannello" data-it="SPIEGAZIONE" data-en="EXPLANATION">
+            SPIEGAZIONE
+        </div>
+
+        <div id="titoloSpiegazione" data-it="BENVENUTO" data-en="WELCOME">
+            BENVENUTO
+        </div>
+
+        <p id="testoSpiegazione" data-it="Lancia il dado per iniziare il tuo turno."
+            data-en="Roll the dice to start your turn.">
+            Lancia il dado per iniziare il tuo turno.
+        </p>
+
+    </div>
+
+
+    <!-- CRONOLOGIA IN BASSO A SINISTRA -->
+    <div id="pannelloCronologia" class="pannello-hud">
+
+        <div class="titolo-pannello">
+            QUEST LOG
+        </div>
+
+        <div id="listaCronologia">
+
+            <div class="cronologia-vuota" data-it="NESSUN ESERCIZIO COMPLETATO" data-en="NO QUEST LOG YET">
+                NESSUN ESERCIZIO COMPLETATO
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- PULSANTE IMPOSTAZIONI -->
+    <button id="apriImpostazioni" class="pulsante-impostazioni" title="Impostazioni">
+        ⚙
+    </button>
+    <!-- MENU IMPOSTAZIONI IN GAME -->
+    <div id="menuImpostazioni">
+
+        <form id="setting">
+
+            <div class="titolo-pannello">
+                <span data-it="IMPOSTAZIONI" data-en="SETTINGS">
+                    IMPOSTAZIONI
+                </span>
+
+                <button type="button" id="chiudiImpostazioni">✕</button>
+            </div>
+
+            <!-- LINGUA -->
+            <div class="gruppo-impostazioni">
+
+                <h3 data-it="LINGUA" data-en="LANGUAGE">LINGUA</h3>
+
+                <label>
+                    <input type="radio" name="lang" value="it">
+                    ITALIANO
+                </label>
+
+                <label>
+                    <input type="radio" name="lang" value="en">
+                    ENGLISH
+                </label>
+
+            </div>
+
+            <!-- QUEST LOG -->
+            <div class="gruppo-impostazioni">
+
+                <h3>QUEST LOG</h3>
+
+                <label>
+                    <input type="checkbox" id="questLog">
+                    <span data-it="Mostra cronologia" data-en="Show quest log">
+                        Mostra cronologia
+                    </span>
+                </label>
+
+            </div>
+
+            <!-- SPIEGAZIONI -->
+            <div class="gruppo-impostazioni">
+
+                <h3 data-it="SPIEGAZIONI" data-en="EXPLANATIONS">
+                    SPIEGAZIONI
+                </h3>
+
+                <label>
+                    <input type="checkbox" id="spiegazioni">
+                    <span data-it="Mostra spiegazioni" data-en="Show explanations">
+                        Mostra spiegazioni
+                    </span>
+                </label>
+
+            </div>
+            <!-- MUSICA -->
+            <div class="gruppo-impostazioni">
+
+                <h3 data-it="MUSICA" data-en="MUSIC">MUSICA</h3>
+
+                <input type="range" id="volume" min="0" max="100" step="1">
+
+            </div>
+
+            <button type="submit" id="salvaImpostazioni">
+                <span data-it="SALVA" data-en="SAVE">SALVA</span>
+            </button>
+
+            <div class="separatore-impostazioni"></div>
+
+            <button type="button" id="quitGame" data-it="ESCI" data-en="QUIT">
+                ESCI
+            </button>
+
+        </form>
+
+    </div>
+
+    <!-- PANNELLO QUIZ: appare quando la pedina si ferma su una casella -->
+    <div id="pannelloQuiz" class="pannello-hud" hidden>
+
+        <div class="titolo-pannello">
+            <h2 id="quizCategoriaLabel"></h2>
+        </div>
+
+        <p id="quizDomanda"></p>
+
+        <pre id="quizCodice" hidden></pre>
+
+        <div id="quizAreaRisposta"></div>
+
+        <div id="quizFeedback" hidden>
+            <p id="quizEsito"></p>
+            <p id="quizSpiegazione"></p>
+        </div>
+
+        <button id="quizContinua" type="button" hidden>CONTINUA</button>
+
+    </div>
+
+    <div id="scena3D"></div>
+
+    <h1 id="nomeGiocatore">GIOCATORE</h1>
+
+    <div id="contenitoreDado">
+        <h1></h1>
+        <button id="lanciaDado" type="button">
+
+            <span id="facciaDado" class="dado-faccia">
+
+                <i class="punto" data-pos="1"></i>
+                <i class="punto" data-pos="2"></i>
+                <i class="punto" data-pos="3"></i>
+                <i class="punto" data-pos="4"></i>
+                <i class="punto" data-pos="5"></i>
+                <i class="punto" data-pos="6"></i>
+                <i class="punto" data-pos="7"></i>
+                <i class="punto" data-pos="8"></i>
+                <i class="punto" data-pos="9"></i>
+
+            </span>
+
+            <span id="testoDado" data-it="LANCIA IL DADO" data-en="ROLL THE DICE">LANCIA IL DADO</span>
+
+        </button>
+
+    </div>
+
+
+    <script type="importmap">
+    {
+    "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/" }
+    }
+    </script>
+
+    <script src="lingue.js"></script>
+    <script src="impostazioni.js"></script>
+    <script type="module" src="game.js"></script>
+    <script src="./audio.js"></script>
+    <script src="./esercizi.js"></script>
+
+
+</body>
+
+</html>
