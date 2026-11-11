@@ -123,7 +123,7 @@ loader.load(
                     }
 
                     if (["tile", "magenta", "gold", "violet"].includes(m.name)) {
-                        m.transparent = true;
+                        m.transparent = false;
                         m.emissiveIntensity = 2;
                         m.depthWrite = true;
                         m.needsUpdate = true;
@@ -306,8 +306,28 @@ document.getElementById('quitGame').addEventListener('click', () => {
 });
 
 // ANIMAZIONE
-function anima() {
+// FPS: requestAnimationFrame senza limite esegue un render
+// PER OGNI refresh dello schermo — su monitor ad alta frequenza
+// (o su browser col vsync permissivo) la GPU lavora il doppio o il
+// quadruplo del necessario. 60 fps bastano per un board game;
+// i frame in eccesso vengono scartati e la GPU resta in calma.
+// (il delta di Clock.getDelta() resta corretto: misura il tempo
+// REALE passato, quindi movimenti e animazioni non si spostano)
+const FPS_MASSIMO = 60;
+const MS_PER_FRAME = 1000 / FPS_MASSIMO;
+let ultimoRender = 0;
+
+function anima(ora) {
     requestAnimationFrame(anima);
+
+    // frame in anticipo rispetto al tetto: si scarta
+    if (ora - ultimoRender < MS_PER_FRAME) {
+        return;
+    }
+
+    // si conserva il resto della divisione, cosi' il ritmo non
+    // deriva nel tempo rispetto all'orologio dello schermo
+    ultimoRender = ora - ((ora - ultimoRender) % MS_PER_FRAME);
 
     const delta = clock.getDelta();
 
